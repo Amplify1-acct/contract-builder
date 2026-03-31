@@ -648,7 +648,7 @@ function generatePDF(){
     doc.rect(0,0,W,H,'F');
 
     // dot grid decoration
-    doc.setFillColor(255,255,255,0.06);
+    doc.setFillColor('#CC0A00');
     for(let r=30;r<H;r+=22){for(let c=30;c<W;c+=22){doc.circle(c,r,1,'F');}}
 
     // logo white — draw SVG paths simplified as text
@@ -667,7 +667,7 @@ function generatePDF(){
     doc.text(titleLines,ML,280);
 
     // meta block
-    doc.setFontSize(11).setFont('helvetica','normal').setTextColor('rgba(255,255,255,0.8)');
+    doc.setFontSize(11).setFont('helvetica','normal').setTextColor('#CCCCCC');
     y=340;
     const meta=[
       ['Prepared for', d.clientName],
@@ -675,7 +675,7 @@ function generatePDF(){
       ['Date', fmtDate(d.contractDate)],
     ];
     meta.forEach(([label,val])=>{
-      doc.setTextColor(255,255,255).setFontSize(9).setFont('helvetica','bold');
+      doc.setTextColor('#FFFFFF').setFontSize(9).setFont('helvetica','bold');
       doc.text(label.toUpperCase(),ML,y);
       doc.setFontSize(13).setFont('helvetica','normal');
       doc.text(val,ML,y+16);
@@ -683,7 +683,7 @@ function generatePDF(){
     });
 
     // footer
-    doc.setFontSize(9).setFont('helvetica','normal').setTextColor('rgba(255,255,255,0.5)');
+    doc.setFontSize(9).setFont('helvetica','normal').setTextColor('#999999');
     doc.text('amplifylaw.ai  |  Confidential',ML,H-30);
     doc.text('Page 1',MR,H-30,'right');
 
