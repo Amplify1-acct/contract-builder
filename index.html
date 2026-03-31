@@ -198,6 +198,38 @@ canvas{display:block;width:100%;height:90px;cursor:crosshair;}
   padding:12px 14px;margin-top:12px;
   font-size:11.5px;color:var(--mid);line-height:1.6;
 }
+.sig-toggle{
+  display:flex;gap:3px;margin-bottom:8px;
+  background:var(--off-white);border-radius:var(--radius);padding:3px;
+}
+.sig-toggle-btn{
+  flex:1;padding:5px 8px;border:none;border-radius:6px;
+  font-size:11.5px;font-weight:500;font-family:inherit;
+  cursor:pointer;background:none;color:var(--mid);transition:all .15s;
+}
+.sig-toggle-btn.active{background:var(--white);color:var(--red);border:0.5px solid var(--border);}
+.sig-type-wrap{display:none;}
+.sig-type-wrap.visible{display:block;}
+.sig-canvas-wrap.hidden{display:none;}
+.sig-type-preview{
+  width:100%;height:90px;
+  border:1px solid var(--border);border-radius:var(--radius);
+  background:var(--white);
+  display:flex;align-items:center;justify-content:center;
+  font-size:42px;font-family:'Dancing Script',cursive;
+  color:#0A0A0A;padding:10px;box-sizing:border-box;
+  position:relative;
+}
+.sig-type-placeholder{
+  position:absolute;inset:0;display:flex;align-items:center;
+  justify-content:center;font-size:13px;
+  font-family:inherit;color:var(--mid);pointer-events:none;
+}
+.sig-type-input-field{
+  width:100%;border:none;outline:none;background:transparent;
+  font-size:42px;font-family:'Dancing Script',cursive;
+  color:#0A0A0A;text-align:center;padding:0;
+}
 
 /* ── NAVIGATION BUTTONS ── */
 .nav-row{display:flex;gap:8px;margin-top:1.25rem;}
@@ -256,7 +288,7 @@ canvas{display:block;width:100%;height:90px;cursor:crosshair;}
 .btn-download:hover{background:var(--red-dark);}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Dancing+Script:wght@600&display=swap" rel="stylesheet"/>
 </head>
 <body>
 
@@ -409,9 +441,19 @@ canvas{display:block;width:100%;height:90px;cursor:crosshair;}
       <div class="sig-wrap">
         <div class="sig-box">
           <div class="sig-box-title">Amplify for Lawyers</div>
-          <div class="sig-canvas-wrap">
+          <div class="sig-toggle">
+            <button class="sig-toggle-btn active" id="toggleDrawA" onclick="switchSigMode('A','draw')">&#9998; Draw</button>
+            <button class="sig-toggle-btn" id="toggleTypeA" onclick="switchSigMode('A','type')">T&nbsp; Type</button>
+          </div>
+          <div class="sig-canvas-wrap" id="canvasWrapA">
             <canvas id="canvasA" width="400" height="90"></canvas>
             <div class="sig-hint" id="hintA">Sign here</div>
+          </div>
+          <div class="sig-type-wrap" id="typeWrapA">
+            <div class="sig-type-preview" id="typePreviewA">
+              <div class="sig-type-placeholder" id="typePlaceholderA">Start typing your signature...</div>
+              <input class="sig-type-input-field" id="typeInputA" oninput="updateTypePreview('A')" autocomplete="off" spellcheck="false"/>
+            </div>
           </div>
           <div class="sig-actions">
             <span class="sig-label">Authorized Representative</span>
@@ -422,9 +464,19 @@ canvas{display:block;width:100%;height:90px;cursor:crosshair;}
         </div>
         <div class="sig-box">
           <div class="sig-box-title">Client</div>
-          <div class="sig-canvas-wrap">
+          <div class="sig-toggle">
+            <button class="sig-toggle-btn active" id="toggleDrawB" onclick="switchSigMode('B','draw')">&#9998; Draw</button>
+            <button class="sig-toggle-btn" id="toggleTypeB" onclick="switchSigMode('B','type')">T&nbsp; Type</button>
+          </div>
+          <div class="sig-canvas-wrap" id="canvasWrapB">
             <canvas id="canvasB" width="400" height="90"></canvas>
             <div class="sig-hint" id="hintB">Sign here</div>
+          </div>
+          <div class="sig-type-wrap" id="typeWrapB">
+            <div class="sig-type-preview" id="typePreviewB">
+              <div class="sig-type-placeholder" id="typePlaceholderB">Start typing your signature...</div>
+              <input class="sig-type-input-field" id="typeInputB" oninput="updateTypePreview('B')" autocomplete="off" spellcheck="false"/>
+            </div>
           </div>
           <div class="sig-actions">
             <span class="sig-label">Client Authorized Signatory</span>
@@ -551,6 +603,54 @@ function initTC(){
 }
 
 // ── SIGNATURES ───────────────────────────────────────
+// track mode per sig
+const sigMode={A:'draw',B:'draw'};
+
+function switchSigMode(which,mode){
+  sigMode[which]=mode;
+  const canvasWrap=document.getElementById('canvasWrap'+which);
+  const typeWrap=document.getElementById('typeWrap'+which);
+  const drawBtn=document.getElementById('toggleDraw'+which);
+  const typeBtn=document.getElementById('toggleType'+which);
+  if(mode==='draw'){
+    canvasWrap.classList.remove('hidden');
+    typeWrap.classList.remove('visible');
+    drawBtn.classList.add('active');
+    typeBtn.classList.remove('active');
+  } else {
+    canvasWrap.classList.add('hidden');
+    typeWrap.classList.add('visible');
+    drawBtn.classList.remove('active');
+    typeBtn.classList.add('active');
+    setTimeout(()=>document.getElementById('typeInput'+which).focus(),50);
+  }
+}
+
+function updateTypePreview(which){
+  const val=document.getElementById('typeInput'+which).value;
+  const placeholder=document.getElementById('typePlaceholder'+which);
+  placeholder.style.opacity=val?'0':'1';
+}
+
+function getSigDataUrl(which){
+  if(sigMode[which]==='type'){
+    // render typed text onto an offscreen canvas
+    const input=document.getElementById('typeInput'+which);
+    const text=input.value.trim();
+    if(!text) return document.getElementById('canvas'+which).toDataURL('image/png');
+    const offscreen=document.createElement('canvas');
+    offscreen.width=400;offscreen.height=90;
+    const ctx=offscreen.getContext('2d');
+    ctx.fillStyle='#FFFFFF';ctx.fillRect(0,0,400,90);
+    ctx.fillStyle='#0A0A0A';
+    ctx.font='52px "Dancing Script"';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(text,200,48);
+    return offscreen.toDataURL('image/png');
+  }
+  return document.getElementById('canvas'+which).toDataURL('image/png');
+}
+
 function setupCanvas(id,hintId){
   const canvas=document.getElementById(id);
   const ctx=canvas.getContext('2d');
@@ -583,7 +683,14 @@ function setupCanvas(id,hintId){
   canvas.addEventListener('touchend',()=>drawing=false);
   canvas._clearFn=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);hint.style.opacity='1';hasSig=false;};
 }
-function clearSig(which){document.getElementById('canvas'+which)._clearFn();}
+function clearSig(which){
+  if(sigMode[which]==='type'){
+    document.getElementById('typeInput'+which).value='';
+    document.getElementById('typePlaceholder'+which).style.opacity='1';
+  } else {
+    document.getElementById('canvas'+which)._clearFn();
+  }
+}
 
 // ── GATHER DATA ───────────────────────────────────────
 function gatherData(){
@@ -616,8 +723,8 @@ function gatherData(){
     sigTitleA:document.getElementById('sigTitleA').value||'Account Director',
     sigNameB:document.getElementById('sigNameB').value||'Client Representative',
     sigTitleB:document.getElementById('sigTitleB').value||'',
-    sigA:document.getElementById('canvasA').toDataURL('image/png'),
-    sigB:document.getElementById('canvasB').toDataURL('image/png'),
+    sigA:getSigDataUrl('A'),
+    sigB:getSigDataUrl('B'),
     services, deliverables, terms,
     total:document.getElementById('totalVal').textContent,
   };
