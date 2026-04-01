@@ -418,7 +418,12 @@ canvas{display:block;width:100%;height:90px;cursor:crosshair;}
   <!-- ── STEP 3: TERMS ── -->
   <div class="step-panel" id="panel-3">
     <div class="card">
-      <div class="card-title">Terms & Conditions</div>
+      <div class="card-title">Addendum to Services Agreement</div>
+      <div style="background:var(--off-white);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;font-size:12.5px;line-height:1.7;color:#444;">
+        <div style="font-size:10px;font-weight:600;letter-spacing:1.5px;color:var(--red);margin-bottom:6px;">GENERAL TERMS &amp; CONDITIONS FOR LEGAL MARKETING AND CONSULTING SERVICES</div>
+        <p>This Addendum ("Addendum") is entered into as of <strong id="tc-preview-date">__________</strong> ("Addendum Effective Date") and is incorporated into and made part of the existing Services Agreement ("Agreement") between <strong>HS Advertising, LLC d/b/a AMPLIFY</strong> ("AMPLIFY") and <strong id="tc-preview-client">__________________</strong> ("Client").</p>
+        <p style="margin-top:8px;">In the event of any conflict between this Addendum and the Agreement, this Addendum shall control with respect to the subject matter herein.</p>
+      </div>
       <p style="font-size:12px;color:var(--mid);margin-bottom:12px;">Check all clauses to include in the contract. Uncheck any you wish to exclude.</p>
       <div id="tc-list"></div>
     </div>
@@ -553,6 +558,19 @@ function goStep(n){
   document.getElementById('panel-'+n).classList.add('active');
   document.querySelectorAll('.step-pill')[n].classList.add('active');
   window.scrollTo({top:0,behavior:'smooth'});
+  // Update preamble preview when reaching Terms step
+  if(n===3){
+    const clientName = document.getElementById('clientName').value.trim() || '__________________';
+    const contractDate = document.getElementById('contractDate').value;
+    document.getElementById('tc-preview-client').textContent = clientName;
+    document.getElementById('tc-preview-date').textContent = contractDate ? fmtDateSimple(contractDate) : '__________';
+  }
+}
+function fmtDateSimple(s){
+  if(!s) return '__________';
+  const [yr,mo,da]=s.split('-');
+  const m=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return m[parseInt(mo)-1]+' '+parseInt(da)+', '+yr;
 }
 
 // ── SERVICES ─────────────────────────────────────────
@@ -942,6 +960,27 @@ function generatePDF(){
     doc.addPage();
     pageHeader('Terms & Conditions');
     y=70;
+
+    // Addendum preamble header
+    doc.setFontSize(8).setFont('helvetica','bold').setTextColor(RED);
+    doc.text('ADDENDUM TO SERVICES AGREEMENT',ML,y);
+    y+=11;
+    doc.setFontSize(8).setFont('helvetica','normal').setTextColor(MID);
+    doc.text('General Terms & Conditions for Legal Marketing and Consulting Services',ML,y);
+    y+=14;
+    doc.setFillColor(OFFWHITE);doc.roundedRect(ML,y,TW,72,4,4,'F');
+    doc.setDrawColor(RED);doc.setLineWidth(2);doc.line(ML,y+4,ML,y+68);
+    doc.setFontSize(9.5).setFont('helvetica','normal').setTextColor('#333333');
+    const preambleLine1 = 'This Addendum ("Addendum") is entered into as of '+fmtDate(d.contractDate)+' ("Addendum Effective Date") and is';
+    const preambleLine2 = 'incorporated into and made part of the existing Services Agreement ("Agreement") between';
+    const preambleLine3 = 'HS Advertising, LLC d/b/a AMPLIFY ("AMPLIFY") and '+d.clientName+' ("Client").';
+    const preambleLine4 = 'In the event of any conflict between this Addendum and the Agreement, this Addendum shall control.';
+    doc.text(preambleLine1,ML+10,y+14);
+    doc.text(preambleLine2,ML+10,y+26);
+    doc.setFont('helvetica','bold');doc.text(preambleLine3,ML+10,y+38);
+    doc.setFont('helvetica','normal').setTextColor(MID);doc.text(preambleLine4,ML+10,y+52);
+    doc.setTextColor('#333333');
+    y+=84;
 
     y=sectionTitle('Terms & Conditions',y);
     y=bodyText('The following terms and conditions govern this Agreement and are binding on both parties upon execution.',y)+10;
