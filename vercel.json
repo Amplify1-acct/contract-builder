@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/sign/:id", "destination": "/sign.html" },
+    { "source": "/api/(.*)", "destination": "/api/$1" }
+  ]
+}
