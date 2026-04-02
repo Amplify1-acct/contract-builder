@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Contract Builder — Amplify for Lawyers</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --red:#E80E00;--red-dark:#b50b00;--black:#0A0A0A;--white:#FFFFFF;
+  --off-white:#F5F0EC;--mid:#888888;--light:#E8E4E0;--border:#E0DBD6;
+  --radius:8px;--radius-lg:12px;
+}
+html{font-size:16px;}
+body{
+  font-family:'DM Sans',system-ui,sans-serif;
+  background:var(--off-white);
+  color:var(--black);
+  min-height:100vh;
+  line-height:1.5;
+}
+
+/* ── NAV ── */
+nav{
+  background:var(--black);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 2rem;height:56px;
+  position:sticky;top:0;z-index:100;
+}
+.nav-logo svg path{fill:white;}
+.nav-badge{
+  font-size:11px;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--mid);font-weight:500;
+}
+
+/* ── LAYOUT ── */
+.page{max-width:820px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+
+/* ── STEP PROGRESS ── */
+.progress{
+  display:flex;align-items:center;gap:0;
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:6px;
+  margin-bottom:1.75rem;overflow:hidden;
+}
+.step-pill{
+  flex:1;text-align:center;padding:8px 4px;
+  border-radius:var(--radius);
+  font-size:11.5px;font-weight:500;
+  cursor:pointer;transition:all .18s;
+  color:var(--mid);letter-spacing:.3px;
+  border:none;background:none;
+}
+.step-pill.active{background:var(--red);color:white;}
+.step-pill.done{color:var(--black);}
+.step-pill.done::before{content:'✓ ';}
+
+/* ── SECTION CARD ── */
+.card{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1rem;
+}
+.card-title{
+  font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  font-weight:600;color:var(--red);
+  padding-bottom:.65rem;margin-bottom:1.1rem;
+  border-bottom:1.5px solid var(--red);
+}
+
+/* ── FORM ELEMENTS ── */
+.grid{display:grid;gap:12px;margin-bottom:12px;}
+.grid-2{grid-template-columns:1fr 1fr;}
+.grid-3{grid-template-columns:1fr 1fr 1fr;}
+.grid-1{grid-template-columns:1fr;}
+@media(max-width:600px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+
+.field{display:flex;flex-direction:column;gap:5px;}
+.field label{font-size:11.5px;font-weight:500;color:var(--mid);}
+.field input,.field select,.field textarea{
+  font-size:13.5px;font-family:inherit;
+  padding:9px 12px;
+  border:1px solid var(--border);border-radius:var(--radius);
+  background:var(--white);color:var(--black);
+  transition:border .15s;outline:none;
+}
+.field input:focus,.field select:focus,.field textarea:focus{
+  border-color:var(--red);
+}
+.field textarea{resize:vertical;min-height:72px;line-height:1.5;}
+select{cursor:pointer;}
+
+/* ── SERVICES TABLE ── */
+.svc-header{
+  display:grid;grid-template-columns:2.2fr 1fr 1fr 36px;
+  gap:8px;padding:0 2px 6px;
+}
+.svc-header span{font-size:11px;font-weight:500;color:var(--mid);letter-spacing:.3px;}
+.svc-row{
+  display:grid;grid-template-columns:2.2fr 1fr 1fr 36px;
+  gap:8px;align-items:center;margin-bottom:8px;
+}
+.svc-row input,.svc-row select{
+  font-size:13px;font-family:inherit;
+  padding:8px 10px;
+  border:1px solid var(--border);border-radius:var(--radius);
+  background:var(--white);color:var(--black);outline:none;
+  transition:border .15s;
+}
+.svc-row input:focus,.svc-row select:focus{border-color:var(--red);}
+.btn-remove{
+  width:34px;height:34px;border-radius:var(--radius);
+  background:none;border:1px solid var(--border);
+  color:var(--mid);cursor:pointer;font-size:15px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.btn-remove:hover{border-color:var(--red);color:var(--red);}
+
+.btn-add{
+  width:100%;padding:9px;margin-top:6px;
+  background:none;border:1px dashed var(--border);
+  border-radius:var(--radius);color:var(--mid);
+  font-size:12.5px;font-family:inherit;cursor:pointer;
+  transition:all .15s;
+}
+.btn-add:hover{border-color:var(--red);color:var(--red);}
+
+.total-bar{
+  display:flex;justify-content:space-between;align-items:center;
+  background:var(--off-white);border-radius:var(--radius);
+  padding:11px 14px;margin-top:10px;
+}
+.total-label{font-size:12px;color:var(--mid);font-weight:500;}
+.total-val{font-size:20px;font-weight:600;color:var(--red);}
+
+/* ── DELIVERABLES ── */
+.deliv-row{display:flex;gap:8px;margin-bottom:8px;}
+.deliv-row input{
+  flex:1;font-size:13px;font-family:inherit;
+  padding:8px 12px;border:1px solid var(--border);
+  border-radius:var(--radius);background:var(--white);
+  color:var(--black);outline:none;transition:border .15s;
+}
+.deliv-row input:focus{border-color:var(--red);}
+
+/* ── T&C ── */
+.tc-item{
+  display:flex;gap:10px;align-items:flex-start;
+  padding:10px 0;border-bottom:1px solid var(--light);
+}
+.tc-item:last-child{border-bottom:none;}
+.tc-item input[type=checkbox]{
+  width:16px;height:16px;margin-top:2px;flex-shrink:0;
+  accent-color:var(--red);cursor:pointer;
+}
+.tc-item label{font-size:12.5px;color:#444;line-height:1.6;cursor:pointer;}
+.tc-item label strong{color:var(--black);}
+
+/* ── SIGNATURE ── */
+.sig-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:600px){.sig-wrap{grid-template-columns:1fr;}}
+.sig-box{
+  border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:14px;background:var(--off-white);
+}
+.sig-box-title{
+  font-size:11.5px;font-weight:600;color:var(--black);
+  margin-bottom:8px;
+}
+.sig-canvas-wrap{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;position:relative;
+}
+canvas{display:block;width:100%;height:90px;cursor:crosshair;}
+.sig-hint{
+  position:absolute;inset:0;display:flex;align-items:center;
+  justify-content:center;pointer-events:none;
+  font-size:12px;color:var(--mid);transition:opacity .2s;
+}
+.sig-actions{display:flex;align-items:center;justify-content:space-between;margin-top:6px;}
+.sig-label{font-size:11px;color:var(--mid);}
+.btn-clear{
+  font-size:11px;color:var(--red);background:none;border:none;
+  cursor:pointer;padding:0;font-family:inherit;
+}
+.sig-name-input{
+  margin-top:8px;width:100%;
+  font-size:13px;font-family:inherit;
+  padding:8px 10px;border:1px solid var(--border);
+  border-radius:var(--radius);background:var(--white);
+  color:var(--black);outline:none;transition:border .15s;
+}
+.sig-name-input:focus{border-color:var(--red);}
+
+.esign-notice{
+  background:var(--off-white);border-radius:var(--radius);
+  padding:12px 14px;margin-top:12px;
+  font-size:11.5px;color:var(--mid);line-height:1.6;
+}
+.sig-toggle{
+  display:flex;gap:3px;margin-bottom:8px;
+  background:var(--off-white);border-radius:var(--radius);padding:3px;
+}
+.sig-toggle-btn{
+  flex:1;padding:5px 8px;border:none;border-radius:6px;
+  font-size:11.5px;font-weight:500;font-family:inherit;
+  cursor:pointer;background:none;color:var(--mid);transition:all .15s;
+}
+.sig-toggle-btn.active{background:var(--white);color:var(--red);border:0.5px solid var(--border);}
+.sig-type-wrap{display:none;}
+.sig-type-wrap.visible{display:block;}
+.sig-canvas-wrap.hidden{display:none;}
+.sig-type-preview{
+  width:100%;height:90px;
+  border:1px solid var(--border);border-radius:var(--radius);
+  background:var(--white);
+  display:flex;align-items:center;justify-content:center;
+  font-size:42px;font-family:'Dancing Script',cursive;
+  color:#0A0A0A;padding:10px;box-sizing:border-box;
+  position:relative;
+}
+.sig-type-placeholder{
+  position:absolute;inset:0;display:flex;align-items:center;
+  justify-content:center;font-size:13px;
+  font-family:inherit;color:var(--mid);pointer-events:none;
+}
+.sig-type-input-field{
+  width:100%;border:none;outline:none;background:transparent;
+  font-size:42px;font-family:'Dancing Script',cursive;
+  color:#0A0A0A;text-align:center;padding:0;
+}
+
+/* ── NAVIGATION BUTTONS ── */
+.nav-row{display:flex;gap:8px;margin-top:1.25rem;}
+.btn-back{
+  padding:10px 20px;background:none;
+  border:1px solid var(--border);border-radius:var(--radius);
+  font-size:13.5px;font-family:inherit;cursor:pointer;
+  color:var(--black);transition:border .15s;
+}
+.btn-back:hover{border-color:var(--black);}
+.btn-next{
+  flex:1;padding:11px;background:var(--black);color:var(--white);
+  border:none;border-radius:var(--radius);font-size:13.5px;
+  font-family:inherit;font-weight:500;cursor:pointer;
+  letter-spacing:.3px;transition:background .15s;
+}
+.btn-next:hover{background:#222;}
+.btn-generate{
+  width:100%;padding:14px;background:var(--red);color:var(--white);
+  border:none;border-radius:var(--radius);font-size:14.5px;
+  font-family:inherit;font-weight:600;cursor:pointer;
+  letter-spacing:.5px;transition:background .15s;margin-top:.5rem;
+}
+.btn-generate:hover{background:var(--red-dark);}
+.btn-generate:disabled{opacity:.45;cursor:not-allowed;}
+
+.status{
+  text-align:center;font-size:12.5px;color:var(--mid);
+  margin-top:10px;min-height:20px;
+}
+.status.success{color:#1a7a4a;font-weight:500;}
+.status.error{color:var(--red);}
+
+/* ── STEP PANELS ── */
+.step-panel{display:none;}
+.step-panel.active{display:block;}
+
+/* ── DOWNLOAD BANNER ── */
+#download-banner{
+  display:none;
+  background:var(--black);color:var(--white);
+  border-radius:var(--radius-lg);padding:1.25rem 1.5rem;
+  margin-top:1rem;
+  align-items:center;justify-content:space-between;gap:1rem;
+}
+#download-banner.show{display:flex;}
+.banner-text{font-size:13.5px;font-weight:500;}
+.banner-sub{font-size:11.5px;color:var(--mid);margin-top:2px;}
+.btn-download{
+  padding:10px 22px;background:var(--red);color:white;
+  border:none;border-radius:var(--radius);font-size:13px;
+  font-family:inherit;font-weight:600;cursor:pointer;
+  white-space:nowrap;transition:background .15s;text-decoration:none;
+  display:inline-block;
+}
+.btn-download:hover{background:var(--red-dark);}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Dancing+Script:wght@600&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <svg width="120" height="55" viewBox="0 0 406 185" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M92.541 7.97619C94.7409 7.97619 96.5303 6.18762 96.5303 3.98864C96.5303 1.78966 94.7409 0 92.541 0C90.3411 0 88.5518 1.78966 88.5518 3.98864C88.5518 6.18762 90.3411 7.97619 92.541 7.97619Z" fill="white"/><path d="M92.541 26.0483C94.7442 26.0483 96.5303 24.2631 96.5303 22.0608C96.5303 19.8585 94.7442 18.0732 92.541 18.0732C90.3378 18.0732 88.5518 19.8585 88.5518 22.0608C88.5518 24.2631 90.3378 26.0483 92.541 26.0483Z" fill="white"/><path d="M155.154 33.9008C156.219 33.9008 157.221 33.486 157.975 32.7327C159.53 31.1782 159.53 28.6483 157.975 27.0927C156.42 25.5381 153.889 25.5381 152.332 27.0927C150.777 28.6472 150.777 31.1782 152.332 32.7327C153.086 33.4849 154.088 33.9008 155.154 33.9008Z" fill="white"/><path d="M142.375 46.6801C143.44 46.6801 144.442 46.2653 145.196 45.512C145.949 44.7587 146.364 43.7572 146.364 42.6925C146.364 41.6268 145.949 40.6253 145.196 39.8719C143.64 38.3174 141.109 38.3174 139.553 39.8719C137.998 41.4265 137.998 43.9575 139.553 45.512C140.308 46.2653 141.31 46.6801 142.375 46.6801Z" fill="white"/><path d="M152.332 152.27C150.777 153.825 150.777 156.356 152.332 157.91C153.086 158.664 154.088 159.079 155.154 159.079C156.22 159.079 157.222 158.664 157.975 157.91C159.53 156.356 159.53 153.826 157.975 152.27C156.42 150.716 153.889 150.716 152.332 152.27Z" fill="white"/><path d="M139.553 139.496C137.998 141.051 137.998 143.582 139.553 145.136C140.307 145.89 141.309 146.305 142.375 146.305C143.441 146.305 144.443 145.89 145.196 145.136C146.751 143.582 146.751 141.052 145.196 139.496C143.64 137.942 141.11 137.941 139.553 139.496Z" fill="white"/><path d="M92.541 185.006C94.7442 185.006 96.5303 183.221 96.5303 181.019C96.5303 178.817 94.7442 177.031 92.541 177.031C90.3378 177.031 88.5518 178.817 88.5518 181.019C88.5518 183.221 90.3378 185.006 92.541 185.006Z" fill="white"/><path d="M92.541 158.958C90.3411 158.958 88.5518 160.748 88.5518 162.947C88.5518 165.146 90.3411 166.934 92.541 166.934C94.7409 166.934 96.5303 165.146 96.5303 162.947C96.5314 160.748 94.7409 158.958 92.541 158.958Z" fill="white"/><path d="M27.1098 152.27C25.5546 153.826 25.5546 156.356 27.1098 157.91C27.8873 158.688 28.9089 159.076 29.9304 159.076C30.952 159.076 31.9735 158.688 32.7511 157.91C34.3063 156.356 34.3063 153.826 32.7511 152.27C31.1959 150.716 28.6649 150.716 27.1098 152.27Z" fill="white"/><path d="M39.8842 139.49C38.329 141.046 38.329 143.576 39.8842 145.13C40.6618 145.908 41.6833 146.296 42.7049 146.296C43.7264 146.296 44.7479 145.908 45.5255 145.13C47.0807 143.576 47.0807 141.046 45.5255 139.49C43.9714 137.937 41.4404 137.937 39.8842 139.49Z" fill="white"/><path d="M3.99035 88.5127C1.79043 88.5127 0 90.3013 0 92.5002C0 94.6992 1.79043 96.4878 3.99035 96.4878C6.19027 96.4878 7.97961 94.6992 7.97961 92.5002C7.97961 90.3013 6.19027 88.5127 3.99035 88.5127Z" fill="white"/><path d="M22.0625 96.4878C24.2657 96.4878 26.0518 94.7025 26.0518 92.5002C26.0518 90.298 24.2657 88.5127 22.0625 88.5127C19.8593 88.5127 18.0732 90.298 18.0732 92.5002C18.0732 94.7025 19.8593 96.4878 22.0625 96.4878Z" fill="white"/><path d="M29.741 33.8986C30.7625 33.8986 31.7841 33.51 32.5617 32.7327C33.3153 31.9794 33.7313 30.9779 33.7313 29.9132C33.7313 28.8486 33.3164 27.846 32.5628 27.0927C31.0076 25.5381 28.4766 25.5381 26.9203 27.0927C25.3651 28.6472 25.3651 31.1782 26.9203 32.7327C27.6979 33.5089 28.7194 33.8986 29.741 33.8986Z" fill="white"/><path d="M42.5203 46.6779C43.5418 46.6779 44.5634 46.2893 45.341 45.512C46.0946 44.7587 46.5106 43.7572 46.5106 42.6925C46.5106 41.6279 46.0957 40.6253 45.3421 39.8719C43.7869 38.3174 41.2559 38.3174 39.6996 39.8719C38.1444 41.4265 38.1444 43.9575 39.6996 45.512C40.4772 46.2893 41.4987 46.6779 42.5203 46.6779Z" fill="white"/><path d="M89.3011 71.9629L70.3398 110.699H78.4155L82.2786 102.516H105.153L108.965 110.699H117.091L98.0804 71.9629H89.3011ZM84.9872 96.7327L91.7091 82.3833C92.16 81.2381 93.113 78.8365 93.6652 77.3092H93.7654C94.3175 78.8365 95.2204 81.2381 95.7214 82.3833L102.443 96.7327H84.9872Z" fill="white"/><path d="M156.812 99.024C156.31 100.279 155.809 101.533 155.609 102.571H155.459C155.258 101.533 154.806 100.334 154.305 99.024L142.366 71.9629H131.029V110.698H137.701V82.8198C137.701 80.8004 137.651 79.0009 137.451 77.7457H137.701C138.052 78.9464 138.554 80.7459 139.206 82.4377L151.847 110.698H158.97L171.811 82.4377C172.514 80.747 173.317 78.5088 173.567 77.7457H173.818C173.617 79.1097 173.517 81.1825 173.517 82.8198V110.698H180.389V71.9629H168.851L156.812 99.024Z" fill="white"/><path d="M234.361 84.4561C234.361 76.7094 229.044 71.9629 220.365 71.9629H196.839V110.699H204.363V97.4403H219.663C228.542 97.4403 234.361 92.3672 234.361 84.4561ZM218.71 91.5486H204.363V77.909H218.71C223.626 77.909 226.435 80.3639 226.435 84.565C226.435 88.9293 223.526 91.5486 218.71 91.5486Z" fill="white"/><path d="M254.22 71.9629H246.695V110.7H279.953V104.098H254.22V71.9629Z" fill="white"/><path d="M300.217 71.9629H292.692V110.699H300.217V71.9629Z" fill="white"/><path d="M324.197 94.3866H350.583V88.2761H324.197V78.1289H351.436V71.9629H316.673V110.7H324.197V94.3866Z" fill="white"/><path d="M379.924 110.699H387.499V97.1137L405.958 71.9629H397.43L384.94 89.2581C384.338 90.1312 384.037 90.6221 383.887 91.222H383.787C383.637 90.6221 383.285 90.1312 382.734 89.2581L370.494 71.9629H361.665L379.924 97.1137V110.699Z" fill="white"/>
+  </svg>
+  <span class="nav-badge">Contract Builder</span>
+</nav>
+
+<div class="page">
+
+  <!-- STEP PROGRESS -->
+  <div class="progress">
+    <button class="step-pill active" onclick="goStep(0)">1. Parties</button>
+    <button class="step-pill" onclick="goStep(1)">2. Services</button>
+    <button class="step-pill" onclick="goStep(2)">3. Timeline</button>
+    <button class="step-pill" onclick="goStep(3)">4. Terms</button>
+    <button class="step-pill" onclick="goStep(4)">5. Sign & Generate</button>
+  </div>
+
+  <!-- ── STEP 0: PARTIES ── -->
+  <div class="step-panel active" id="panel-0">
+    <div class="card">
+      <div class="card-title">Client Information</div>
+      <div class="grid grid-2">
+        <div class="field"><label>Firm / Company Name</label><input id="clientName" placeholder="Smith & Associates Law Firm"/></div>
+        <div class="field"><label>Primary Contact Name</label><input id="clientContact" placeholder="Jane Smith"/></div>
+      </div>
+      <div class="grid grid-2">
+        <div class="field"><label>Email Address</label><input id="clientEmail" type="email" placeholder="jane@smithlaw.com"/></div>
+        <div class="field"><label>Phone Number</label><input id="clientPhone" placeholder="(555) 000-0000"/></div>
+      </div>
+      <div class="grid grid-1">
+        <div class="field"><label>Mailing Address</label><input id="clientAddr" placeholder="123 Main St, City, State ZIP"/></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Contract Details</div>
+      <div class="grid grid-2">
+        <div class="field"><label>Contract Date</label><input id="contractDate" type="date"/></div>
+        <div class="field"><label>Contract Number</label><input id="contractNum" placeholder="AMP-2026-001"/></div>
+      </div>
+      <div class="grid grid-2" style="margin-top:12px;">
+        <div class="field">
+          <label>Assigned Sales Rep</label>
+          <select id="salesRep">
+            <option value="Craig">Craig</option>
+            <option value="Cynthia">Cynthia</option>
+            <option value="Scott">Scott</option>
+            <option value="Matthew Hughes">Matthew Hughes</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-next" onclick="goStep(1)">Next: Services →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 1: SERVICES ── -->
+  <div class="step-panel" id="panel-1">
+    <div class="card">
+      <div class="card-title">Services & Pricing</div>
+      <div class="svc-header">
+        <span>Description</span><span>Type</span><span>Price (USD)</span><span></span>
+      </div>
+      <div id="svc-rows"></div>
+      <button class="btn-add" onclick="addService()">+ Add service line</button>
+      <div class="total-bar">
+        <span class="total-label">Total Contract Value</span>
+        <span class="total-val" id="totalVal">$0.00</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Payment Terms</div>
+      <div class="grid grid-2">
+        <div class="field">
+          <label>Payment Schedule</label>
+          <select id="paySchedule">
+            <option>50% upfront, 50% on completion</option>
+            <option>Monthly retainer (due 1st of month)</option>
+            <option>100% upfront before work begins</option>
+            <option>Net 30 upon invoice</option>
+            <option>Milestone-based payments</option>
+            <option>Quarterly billing</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Late Payment Fee</label>
+          <select id="lateFee">
+            <option>1.5% per month on overdue balance</option>
+            <option>2% per month on overdue balance</option>
+            <option>$50 flat fee per late payment</option>
+            <option>No late fee</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-back" onclick="goStep(0)">← Back</button>
+      <button class="btn-next" onclick="goStep(2)">Next: Timeline →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 2: TIMELINE & DELIVERABLES ── -->
+  <div class="step-panel" id="panel-2">
+    <div class="card">
+      <div class="card-title">Project Timeline</div>
+      <div class="grid grid-2">
+        <div class="field"><label>Start Date</label><input id="startDate" type="date"/></div>
+        <div class="field"><label>End Date / Renewal Date</label><input id="endDate" type="date"/></div>
+      </div>
+      <div class="grid grid-1">
+        <div class="field">
+          <label>Engagement Type</label>
+          <select id="engType">
+            <option>Fixed-term project</option>
+            <option>Ongoing monthly retainer</option>
+            <option>Project with optional renewal</option>
+            <option>Rolling 30-day agreement</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Deliverables</div>
+      <div id="deliv-rows"></div>
+      <button class="btn-add" onclick="addDeliverable()">+ Add deliverable</button>
+    </div>
+    <div class="nav-row">
+      <button class="btn-back" onclick="goStep(1)">← Back</button>
+      <button class="btn-next" onclick="goStep(3)">Next: Terms →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: TERMS ── -->
+  <div class="step-panel" id="panel-3">
+    <div class="card">
+      <div class="card-title">Addendum to Services Agreement</div>
+      <div style="background:var(--off-white);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;font-size:12.5px;line-height:1.7;color:#444;">
+        <div style="font-size:10px;font-weight:600;letter-spacing:1.5px;color:var(--red);margin-bottom:6px;">GENERAL TERMS &amp; CONDITIONS FOR LEGAL MARKETING AND CONSULTING SERVICES</div>
+        <p>This Addendum ("Addendum") is entered into as of <strong id="tc-preview-date">__________</strong> ("Addendum Effective Date") and is incorporated into and made part of the existing Services Agreement ("Agreement") between <strong>HS Advertising, LLC d/b/a AMPLIFY</strong> ("AMPLIFY") and <strong id="tc-preview-client">__________________</strong> ("Client").</p>
+        <p style="margin-top:8px;">In the event of any conflict between this Addendum and the Agreement, this Addendum shall control with respect to the subject matter herein.</p>
+      </div>
+      <p style="font-size:12px;color:var(--mid);margin-bottom:12px;">Check all clauses to include in the contract. Uncheck any you wish to exclude.</p>
+      <div id="tc-list"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Additional Notes / Custom Terms</div>
+      <div class="field">
+        <textarea id="addlNotes" rows="4" placeholder="Add any custom scope notes, exclusions, special arrangements, or additional terms here..."></textarea>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-back" onclick="goStep(2)">← Back</button>
+      <button class="btn-next" onclick="goStep(4)">Next: Sign & Generate →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 4: SIGN & GENERATE ── -->
+  <div class="step-panel" id="panel-4">
+    <div class="card">
+      <div class="card-title">Electronic Signatures</div>
+      <div class="sig-wrap">
+        <div class="sig-box">
+          <div class="sig-box-title">Amplify for Lawyers</div>
+          <div class="sig-toggle">
+            <button class="sig-toggle-btn active" id="toggleDrawA" onclick="switchSigMode('A','draw')">&#9998; Draw</button>
+            <button class="sig-toggle-btn" id="toggleTypeA" onclick="switchSigMode('A','type')">T&nbsp; Type</button>
+          </div>
+          <div class="sig-canvas-wrap" id="canvasWrapA">
+            <canvas id="canvasA" width="400" height="90"></canvas>
+            <div class="sig-hint" id="hintA">Sign here</div>
+          </div>
+          <div class="sig-type-wrap" id="typeWrapA">
+            <div class="sig-type-preview" id="typePreviewA">
+              <div class="sig-type-placeholder" id="typePlaceholderA">Start typing your signature...</div>
+              <input class="sig-type-input-field" id="typeInputA" oninput="updateTypePreview('A')" autocomplete="off" spellcheck="false"/>
+            </div>
+          </div>
+          <div class="sig-actions">
+            <span class="sig-label">Authorized Representative</span>
+            <button class="btn-clear" onclick="clearSig('A')">Clear</button>
+          </div>
+          <input class="sig-name-input" id="sigNameA" placeholder="Printed name" value="Amplify Representative"/>
+          <input class="sig-name-input" id="sigTitleA" placeholder="Title / Role" value="Account Director" style="margin-top:6px;"/>
+        </div>
+        <div class="sig-box">
+          <div class="sig-box-title">Client</div>
+          <div class="sig-toggle">
+            <button class="sig-toggle-btn active" id="toggleDrawB" onclick="switchSigMode('B','draw')">&#9998; Draw</button>
+            <button class="sig-toggle-btn" id="toggleTypeB" onclick="switchSigMode('B','type')">T&nbsp; Type</button>
+          </div>
+          <div class="sig-canvas-wrap" id="canvasWrapB">
+            <canvas id="canvasB" width="400" height="90"></canvas>
+            <div class="sig-hint" id="hintB">Sign here</div>
+          </div>
+          <div class="sig-type-wrap" id="typeWrapB">
+            <div class="sig-type-preview" id="typePreviewB">
+              <div class="sig-type-placeholder" id="typePlaceholderB">Start typing your signature...</div>
+              <input class="sig-type-input-field" id="typeInputB" oninput="updateTypePreview('B')" autocomplete="off" spellcheck="false"/>
+            </div>
+          </div>
+          <div class="sig-actions">
+            <span class="sig-label">Client Authorized Signatory</span>
+            <button class="btn-clear" onclick="clearSig('B')">Clear</button>
+          </div>
+          <input class="sig-name-input" id="sigNameB" placeholder="Printed name"/>
+          <input class="sig-name-input" id="sigTitleB" placeholder="Title / Role" style="margin-top:6px;"/>
+        </div>
+      </div>
+      <div class="esign-notice">
+        By signing above, both parties agree to the terms of this Service Agreement. Electronic signatures are legally binding under the Electronic Signatures in Global and National Commerce Act (ESIGN) and the Uniform Electronic Transactions Act (UETA). The signed date will be automatically recorded in the generated document.
+      </div>
+    </div>
+
+    <button class="btn-generate" id="genBtn" onclick="sendToClient()">
+      Sign &amp; Send to Client
+    </button>
+    <div class="status" id="statusMsg"></div>
+
+    <div id="download-banner">
+      <div>
+        <div class="banner-text">✅ Sent to client for signature.</div>
+        <div class="banner-sub" id="banner-filename"></div>
+      </div>
+      <button class="btn-download" onclick="copyLink()" id="copy-link-btn">Copy Signing Link</button>
+    </div>
+
+    <div class="nav-row" style="margin-top:1rem;">
+      <button class="btn-back" onclick="goStep(3)">← Back</button>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+// ── DATA ──────────────────────────────────────────────
+const DEFAULT_SERVICES = [
+  {desc:'SEO & Content Strategy', type:'Monthly Retainer', price:'2500'},
+  {desc:'Website Optimization', type:'One-Time', price:'1500'},
+  {desc:'Google Business Profile Management', type:'Monthly Retainer', price:'500'},
+];
+const DEFAULT_DELIVERABLES = [
+  'Monthly SEO performance report with keyword rankings',
+  'Keyword strategy and content calendar',
+  'Optimized website pages (up to 10 per month)',
+  'Monthly strategy call (60 minutes)',
+];
+const TC_CLAUSES = [
+  {id:'tc1', title:'1. Services Generally', body:'AMPLIFY shall provide marketing, consulting, public relations, and related strategic services as agreed between the parties. Client acknowledges that such services are advisory and strategic in nature. AMPLIFY retains sole discretion as to the manner, means, timing, and methods of performing the services.'},
+  {id:'tc2', title:'2. Independent Contractor', body:'AMPLIFY is an independent contractor and not an employee, partner, or agent of Client. Nothing herein shall be deemed to create any joint venture, partnership, or fiduciary relationship. AMPLIFY has no authority to bind Client without prior written consent.'},
+  {id:'tc3', title:'3. No Guarantee of Results', body:'Client acknowledges and agrees that: (a) marketing, PR, and visibility outcomes are inherently uncertain; (b) AMPLIFY does not guarantee any specific results, including leads, cases, revenue, media placements, or rankings; and (c) any prior results or examples are illustrative only.'},
+  {id:'tc4', title:'4. Client Responsibilities', body:'Client agrees to: provide timely access to personnel, information, and materials; respond promptly to requests, approvals, and opportunities; ensure all provided information is accurate and lawful; and comply with all applicable laws, including attorney advertising and ethics rules. AMPLIFY shall not be responsible for delays or diminished performance caused by Client.'},
+  {id:'tc5', title:'5. Approvals & Content Responsibility', body:'Client retains final responsibility for reviewing and approving all materials and ensuring compliance with all legal and ethical requirements. AMPLIFY shall not be liable for any claims arising from materials approved by Client.'},
+  {id:'tc6', title:'6. Fees and Payment', body:'Fees shall be as set forth in the Agreement. Unless otherwise stated: fees are non-refundable once services are performed; invoices are due upon receipt; and late payments may result in suspension of services.'},
+  {id:'tc7', title:'7.1 Minimum Engagement Term (12 Months)', body:'Client agrees to an initial minimum engagement term of 12 months ("Minimum Term"), beginning on the Effective Date. During the Minimum Term: the Agreement may not be terminated for convenience by Client; and Client remains responsible for all fees due during the Minimum Term.'},
+  {id:'tc8', title:'7.2 Termination After Minimum Term', body:'Following the expiration of the Minimum Term, either party may terminate the Agreement upon thirty (30) days\' prior written notice to the other party. Client acknowledges that the 30-day notice period is required for operational wind-down and transition. Client remains responsible for all fees incurred during the notice period. No termination shall be effective unless and until the full thirty (30) day notice period has elapsed.'},
+  {id:'tc9', title:'7.3 Effect of Termination', body:'Upon termination: all outstanding invoices shall become immediately due and payable; AMPLIFY may cease all services upon completion of the notice period; and AMPLIFY shall have no obligation to complete partially performed services unless otherwise agreed in writing.'},
+  {id:'tc10', title:'8. Intellectual Property', body:'Upon full payment, Client may use final deliverables for business purposes. AMPLIFY retains ownership of all underlying methodologies, strategies, frameworks, and proprietary materials.'},
+  {id:'tc11', title:'9. Confidentiality', body:'Each party agrees to maintain the confidentiality of all non-public information received from the other. This obligation shall survive termination.'},
+  {id:'tc12', title:'10. Compliance with Laws', body:'Client is solely responsible for compliance with advertising and solicitation rules, professional responsibility obligations, and applicable laws and regulations. AMPLIFY does not provide legal advice.'},
+  {id:'tc13', title:'11. Limitation of Liability', body:'To the maximum extent permitted by law: AMPLIFY shall not be liable for indirect, incidental, or consequential damages; and AMPLIFY\'s total liability shall not exceed the fees paid by Client in the two (2) months preceding the claim.'},
+  {id:'tc14', title:'12. Indemnification', body:'Client agrees to indemnify and hold harmless AMPLIFY from any claims arising out of: client-provided materials or information; Client\'s business operations; or Client\'s legal or regulatory compliance.'},
+  {id:'tc15', title:'13. Non-Solicitation', body:'During the term of the Agreement and for one (1) year thereafter, Client shall not solicit or hire AMPLIFY personnel without prior written consent.'},
+  {id:'tc16', title:'14. General Provisions', body:'This Addendum forms part of the entire Agreement between HS Advertising, LLC d/b/a AMPLIFY and Client. If any provision is invalid, the remainder shall remain enforceable. Governing law and venue shall follow the Agreement. In the event of any conflict between this Addendum and the Agreement, this Addendum shall control.'},
+];
+
+// ── STEP NAVIGATION ──────────────────────────────────
+let currentStep = 0;
+function goStep(n){
+  document.getElementById('panel-'+currentStep).classList.remove('active');
+  document.querySelectorAll('.step-pill')[currentStep].classList.remove('active');
+  if(currentStep < n) document.querySelectorAll('.step-pill')[currentStep].classList.add('done');
+  currentStep = n;
+  document.getElementById('panel-'+n).classList.add('active');
+  document.querySelectorAll('.step-pill')[n].classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  // Update preamble preview when reaching Terms step
+  if(n===3){
+    const clientName = document.getElementById('clientName').value.trim() || '__________________';
+    const contractDate = document.getElementById('contractDate').value;
+    document.getElementById('tc-preview-client').textContent = clientName;
+    document.getElementById('tc-preview-date').textContent = contractDate ? fmtDateSimple(contractDate) : '__________';
+  }
+}
+function fmtDateSimple(s){
+  if(!s) return '__________';
+  const [yr,mo,da]=s.split('-');
+  const m=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return m[parseInt(mo)-1]+' '+parseInt(da)+', '+yr;
+}
+
+// ── SERVICES ─────────────────────────────────────────
+function initServices(){
+  DEFAULT_SERVICES.forEach(s=>addService(s.desc,s.type,s.price));
+}
+function addService(desc='',type='Monthly Retainer',price=''){
+  const row = document.createElement('div');
+  row.className='svc-row';
+  row.innerHTML=`
+    <input class="svc-desc" placeholder="Service description" value="${desc}" oninput="calcTotal()"/>
+    <select class="svc-type" onchange="calcTotal()">
+      <option${type==='Monthly Retainer'?' selected':''}>Monthly Retainer</option>
+      <option${type==='One-Time'?' selected':''}>One-Time</option>
+      <option${type==='Hourly'?' selected':''}>Hourly</option>
+      <option${type==='Milestone'?' selected':''}>Milestone</option>
+      <option${type==='Annual'?' selected':''}>Annual</option>
+    </select>
+    <input type="number" class="svc-price" placeholder="0.00" value="${price}" min="0" step="0.01" oninput="calcTotal()"/>
+    <button class="btn-remove" onclick="this.closest('.svc-row').remove();calcTotal()">✕</button>`;
+  document.getElementById('svc-rows').appendChild(row);
+  calcTotal();
+}
+function calcTotal(){
+  let t=0;
+  document.querySelectorAll('.svc-price').forEach(i=>t+=parseFloat(i.value)||0);
+  document.getElementById('totalVal').textContent='$'+t.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+// ── DELIVERABLES ─────────────────────────────────────
+function initDeliverables(){
+  DEFAULT_DELIVERABLES.forEach(d=>addDeliverable(d));
+}
+function addDeliverable(val=''){
+  const row=document.createElement('div');
+  row.className='deliv-row';
+  row.innerHTML=`
+    <input placeholder="Describe a specific deliverable..." value="${val}"/>
+    <button class="btn-remove" onclick="this.closest('.deliv-row').remove()">✕</button>`;
+  document.getElementById('deliv-rows').appendChild(row);
+}
+
+// ── T&C ──────────────────────────────────────────────
+function initTC(){
+  const list=document.getElementById('tc-list');
+  TC_CLAUSES.forEach(tc=>{
+    const div=document.createElement('div');
+    div.className='tc-item';
+    div.innerHTML=`
+      <input type="checkbox" id="${tc.id}" checked/>
+      <label for="${tc.id}"><strong>${tc.title}:</strong> ${tc.body}</label>`;
+    list.appendChild(div);
+  });
+}
+
+// ── SIGNATURES ───────────────────────────────────────
+// track mode per sig
+const sigMode={A:'draw',B:'draw'};
+
+function switchSigMode(which,mode){
+  sigMode[which]=mode;
+  const canvasWrap=document.getElementById('canvasWrap'+which);
+  const typeWrap=document.getElementById('typeWrap'+which);
+  const drawBtn=document.getElementById('toggleDraw'+which);
+  const typeBtn=document.getElementById('toggleType'+which);
+  if(mode==='draw'){
+    canvasWrap.classList.remove('hidden');
+    typeWrap.classList.remove('visible');
+    drawBtn.classList.add('active');
+    typeBtn.classList.remove('active');
+  } else {
+    canvasWrap.classList.add('hidden');
+    typeWrap.classList.add('visible');
+    drawBtn.classList.remove('active');
+    typeBtn.classList.add('active');
+    setTimeout(()=>document.getElementById('typeInput'+which).focus(),50);
+  }
+}
+
+function updateTypePreview(which){
+  const val=document.getElementById('typeInput'+which).value;
+  const placeholder=document.getElementById('typePlaceholder'+which);
+  placeholder.style.opacity=val?'0':'1';
+}
+
+function getSigDataUrl(which){
+  if(sigMode[which]==='type'){
+    // render typed text onto an offscreen canvas
+    const input=document.getElementById('typeInput'+which);
+    const text=input.value.trim();
+    if(!text) return document.getElementById('canvas'+which).toDataURL('image/png');
+    const offscreen=document.createElement('canvas');
+    offscreen.width=400;offscreen.height=90;
+    const ctx=offscreen.getContext('2d');
+    ctx.fillStyle='#FFFFFF';ctx.fillRect(0,0,400,90);
+    ctx.fillStyle='#0A0A0A';
+    ctx.font='52px "Dancing Script"';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(text,200,48);
+    return offscreen.toDataURL('image/png');
+  }
+  return document.getElementById('canvas'+which).toDataURL('image/png');
+}
+
+function setupCanvas(id,hintId){
+  const canvas=document.getElementById(id);
+  const ctx=canvas.getContext('2d');
+  const hint=document.getElementById(hintId);
+  let drawing=false,lx=0,ly=0,hasSig=false;
+  function pos(e){
+    const r=canvas.getBoundingClientRect();
+    const sx=canvas.width/r.width, sy=canvas.height/r.height;
+    if(e.touches) return [(e.touches[0].clientX-r.left)*sx,(e.touches[0].clientY-r.top)*sy];
+    return [(e.clientX-r.left)*sx,(e.clientY-r.top)*sy];
+  }
+  canvas.addEventListener('mousedown',e=>{drawing=true;[lx,ly]=pos(e);if(!hasSig){hint.style.opacity='0';hasSig=true;}});
+  canvas.addEventListener('mousemove',e=>{
+    if(!drawing)return;
+    const [x,y]=pos(e);
+    ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(x,y);
+    ctx.strokeStyle='#0A0A0A';ctx.lineWidth=1.8;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();
+    [lx,ly]=[x,y];
+  });
+  canvas.addEventListener('mouseup',()=>drawing=false);
+  canvas.addEventListener('mouseleave',()=>drawing=false);
+  canvas.addEventListener('touchstart',e=>{e.preventDefault();drawing=true;[lx,ly]=pos(e);if(!hasSig){hint.style.opacity='0';hasSig=true;}},{passive:false});
+  canvas.addEventListener('touchmove',e=>{
+    e.preventDefault();if(!drawing)return;
+    const [x,y]=pos(e);
+    ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(x,y);
+    ctx.strokeStyle='#0A0A0A';ctx.lineWidth=1.8;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();
+    [lx,ly]=[x,y];
+  },{passive:false});
+  canvas.addEventListener('touchend',()=>drawing=false);
+  canvas._clearFn=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);hint.style.opacity='1';hasSig=false;};
+}
+function clearSig(which){
+  if(sigMode[which]==='type'){
+    document.getElementById('typeInput'+which).value='';
+    document.getElementById('typePlaceholder'+which).style.opacity='1';
+  } else {
+    document.getElementById('canvas'+which)._clearFn();
+  }
+}
+
+// ── CONFIG
+const SUPABASE_URL = 'https://hrdmnrxyawoqbmueyvxd.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_ukRKma9wYlTduxnAO2zOcw_01ZiLFpn';
+let lastSigningLink = '';
+
+// ── SEND TO CLIENT
+async function sendToClient() {
+  const d = gatherData();
+  const btn = document.getElementById('genBtn');
+  const status = document.getElementById('statusMsg');
+
+  if (!d.clientEmail) {
+    status.textContent = 'Please enter the client email address in Step 1.';
+    status.className = 'status error';
+    return;
+  }
+
+  btn.disabled = true;
+  status.textContent = 'Saving contract and sending to client...';
+  status.className = 'status';
+
+  try {
+    const res = await fetch('/api/send-to-client', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contractData: d,
+        amplifySig: getSigDataUrl('A'),
+      })
+    });
+
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Send failed');
+
+    lastSigningLink = result.signingLink;
+    document.getElementById('banner-filename').textContent = 'Signing link: ' + result.signingLink;
+    document.getElementById('download-banner').classList.add('show');
+    status.textContent = 'Email sent to ' + d.clientEmail;
+    status.className = 'status success';
+    btn.disabled = false;
+
+  } catch(err) {
+    status.textContent = 'Error: ' + err.message;
+    status.className = 'status error';
+    btn.disabled = false;
+  }
+}
+
+function copyLink() {
+  if (lastSigningLink) {
+    navigator.clipboard.writeText(lastSigningLink);
+    document.getElementById('copy-link-btn').textContent = 'Copied!';
+    setTimeout(() => document.getElementById('copy-link-btn').textContent = 'Copy Signing Link', 2000);
+  }
+}
+
+// ── GATHER DATA ───────────────────────────────────────
+function gatherData(){
+  const services=[];
+  document.querySelectorAll('.svc-row').forEach(r=>{
+    const d=r.querySelector('.svc-desc').value.trim();
+    const t=r.querySelector('.svc-type').value;
+    const p=parseFloat(r.querySelector('.svc-price').value)||0;
+    if(d) services.push({desc:d,type:t,price:p});
+  });
+  const deliverables=[];
+  document.querySelectorAll('#deliv-rows input').forEach(i=>{if(i.value.trim())deliverables.push(i.value.trim());});
+  const terms=[];
+  TC_CLAUSES.forEach(tc=>{if(document.getElementById(tc.id)?.checked)terms.push({title:tc.title,body:tc.body});});
+  return {
+    clientName:document.getElementById('clientName').value||'Client Name',
+    clientContact:document.getElementById('clientContact').value||'',
+    clientEmail:document.getElementById('clientEmail').value||'',
+    clientPhone:document.getElementById('clientPhone').value||'',
+    clientAddr:document.getElementById('clientAddr').value||'',
+    contractDate:document.getElementById('contractDate').value||new Date().toISOString().split('T')[0],
+    contractNum:document.getElementById('contractNum').value||'AMP-2026-001',
+    salesRep:document.getElementById('salesRep').value||'',
+    paySchedule:document.getElementById('paySchedule').value,
+    lateFee:document.getElementById('lateFee').value,
+    startDate:document.getElementById('startDate').value||'',
+    endDate:document.getElementById('endDate').value||'',
+    engType:document.getElementById('engType').value,
+    addlNotes:document.getElementById('addlNotes').value||'',
+    sigNameA:document.getElementById('sigNameA').value||'Amplify Representative',
+    sigTitleA:document.getElementById('sigTitleA').value||'Account Director',
+    sigNameB:document.getElementById('sigNameB').value||'Client Representative',
+    sigTitleB:document.getElementById('sigTitleB').value||'',
+    sigA:getSigDataUrl('A'),
+    sigB:getSigDataUrl('B'),
+    services, deliverables, terms,
+    total:document.getElementById('totalVal').textContent,
+  };
+}
+
+// ── PDF GENERATION ────────────────────────────────────
+function generatePDF(){
+  const d=gatherData();
+  const btn=document.getElementById('genBtn');
+  const status=document.getElementById('statusMsg');
+  btn.disabled=true;
+  status.textContent='Building your contract...';
+  status.className='status';
+
+  try{
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'portrait',unit:'pt',format:'letter'});
+    const W=612, H=792;
+    const RED='#E80E00', BLACK='#0A0A0A', WHITE='#FFFFFF', OFFWHITE='#F5F0EC', MID='#888888', LIGHT='#E8E4E0';
+    const ML=50, MR=562, TW=MR-ML;
+    let y=0;
+
+    // helper: fmt date
+    function fmtDate(s){if(!s)return'—';const[yr,mo,da]=s.split('-');const m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return`${m[parseInt(mo)-1]} ${parseInt(da)}, ${yr}`;}
+
+    // ── PAGE 1: COVER ──
+    doc.setFillColor(RED);
+    doc.rect(0,0,W,H,'F');
+
+    // dot grid decoration
+    doc.setFillColor('#CC0A00');
+    for(let r=30;r<H;r+=22){for(let c=30;c<W;c+=22){doc.circle(c,r,1,'F');}}
+
+    // logo white — draw SVG paths simplified as text
+    doc.setFontSize(48).setFont('helvetica','bold').setTextColor(WHITE);
+    doc.text('AMPLIFY',ML,200);
+    doc.setFontSize(14).setFont('helvetica','normal');
+    doc.text('FOR LAWYERS',ML,222);
+
+    // red rule
+    doc.setFillColor(WHITE);
+    doc.rect(ML,244,TW,1.5,'F');
+
+    // title
+    doc.setFontSize(32).setFont('helvetica','bold').setTextColor(WHITE);
+    const titleLines=doc.splitTextToSize('Service Agreement',TW-40);
+    doc.text(titleLines,ML,280);
+
+    // meta block
+    doc.setFontSize(11).setFont('helvetica','normal').setTextColor('#CCCCCC');
+    y=340;
+    const meta=[
+      ['Prepared for', d.clientName],
+      ['Contract No.', d.contractNum],
+      ['Date', fmtDate(d.contractDate)],
+    ];
+    meta.forEach(([label,val])=>{
+      doc.setTextColor('#FFFFFF').setFontSize(9).setFont('helvetica','bold');
+      doc.text(label.toUpperCase(),ML,y);
+      doc.setFontSize(13).setFont('helvetica','normal');
+      doc.text(val,ML,y+16);
+      y+=42;
+    });
+
+    // footer
+    doc.setFontSize(9).setFont('helvetica','normal').setTextColor('#999999');
+    doc.text('amplifylaw.ai  |  Confidential',ML,H-30);
+    doc.text('Page 1',MR,H-30,'right');
+
+    // ── PAGE 2: PARTIES ──
+    doc.addPage();
+    function pageHeader(label){
+      doc.setFillColor(BLACK);
+      doc.rect(0,0,W,48,'F');
+      doc.setFontSize(9).setFont('helvetica','bold').setTextColor(WHITE);
+      doc.text('AMPLIFY FOR LAWYERS  —  SERVICE AGREEMENT',ML,22);
+      doc.setFontSize(9).setFont('helvetica','normal').setTextColor(MID);
+      doc.text(d.contractNum,MR,22,'right');
+      doc.setFontSize(11).setFont('helvetica','bold').setTextColor(WHITE);
+      doc.text(label,ML,38);
+    }
+    function pageFooter(n){
+      doc.setDrawColor(LIGHT);doc.setLineWidth(0.5);doc.line(ML,H-36,MR,H-36);
+      doc.setFontSize(8).setFont('helvetica','normal').setTextColor(MID);
+      doc.text('amplifylaw.ai',ML,H-22);
+      doc.text('Page '+n,MR,H-22,'right');
+    }
+    function sectionTitle(title,yy){
+      doc.setFontSize(8).setFont('helvetica','bold').setTextColor(RED);
+      doc.text(title.toUpperCase(),ML,yy);
+      doc.setDrawColor(RED);doc.setLineWidth(1);doc.line(ML,yy+3,MR,yy+3);
+      return yy+16;
+    }
+    function bodyText(text,yy,maxW){
+      doc.setFontSize(10).setFont('helvetica','normal').setTextColor(BLACK);
+      const lines=doc.splitTextToSize(text,maxW||TW);
+      doc.text(lines,ML,yy);
+      return yy+lines.length*14;
+    }
+    function labelVal(label,val,yy,x,colW){
+      doc.setFontSize(8).setFont('helvetica','bold').setTextColor(MID);
+      doc.text(label.toUpperCase(),x,yy);
+      doc.setFontSize(10).setFont('helvetica','normal').setTextColor(BLACK);
+      const lines=doc.splitTextToSize(val||'—',colW-10);
+      doc.text(lines,x,yy+12);
+      return yy+12+lines.length*13;
+    }
+
+    pageHeader('Parties & Agreement Overview');
+    y=70;
+
+    // intro paragraph
+    y=sectionTitle('Agreement',y);
+    y=bodyText(`This Service Agreement ("Agreement") is entered into as of ${fmtDate(d.contractDate)}, by and between Amplify for Lawyers ("Amplify"), a digital marketing agency specializing in legal industry growth, and the client identified below ("Client"). This Agreement sets forth the terms under which Amplify will provide the services described herein.`,y)+10;
+
+    // parties box
+    y=sectionTitle('The Parties',y);
+    doc.setFillColor(OFFWHITE);doc.roundedRect(ML,y,TW,90,4,4,'F');
+    const halfW=TW/2-10;
+    labelVal('Service Provider','Amplify for Lawyers',y+10,ML+10,halfW);
+    labelVal('Website','amplifylaw.ai',y+10+30,ML+10,halfW);
+    labelVal('Client / Firm Name',d.clientName,y+10,ML+TW/2+10,halfW);
+    labelVal('Primary Contact',d.clientContact,y+10+30,ML+TW/2+10,halfW);
+    y+=100;
+
+    doc.setFillColor(OFFWHITE);doc.roundedRect(ML,y,TW,70,4,4,'F');
+    labelVal('Email',d.clientEmail,y+10,ML+10,halfW);
+    labelVal('Phone',d.clientPhone,y+10,ML+TW/2+10,halfW);
+    labelVal('Address',d.clientAddr,y+44,ML+10,TW-20);
+    y+=82;
+
+    y=sectionTitle('Contract Reference',y+8);
+    doc.setFillColor(OFFWHITE);doc.roundedRect(ML,y,TW,40,4,4,'F');
+    labelVal('Contract Number',d.contractNum,y+8,ML+10,halfW);
+    labelVal('Effective Date',fmtDate(d.contractDate),y+8,ML+TW/2+10,halfW);
+    y+=52;
+
+    pageFooter(2);
+
+    // ── PAGE 3: SERVICES & PRICING ──
+    doc.addPage();
+    pageHeader('Services & Pricing');
+    y=70;
+
+    y=sectionTitle('Scope of Services',y);
+    y=bodyText(`Amplify agrees to provide the following services to Client during the term of this Agreement. All services are subject to the payment terms and conditions set forth herein.`,y)+12;
+
+    // services table
+    const colW=[TW*0.44,TW*0.22,TW*0.22,TW*0.12];
+    const colX=[ML,ML+colW[0],ML+colW[0]+colW[1],ML+colW[0]+colW[1]+colW[2]];
+    // header
+    doc.setFillColor(BLACK);doc.rect(ML,y,TW,22,'F');
+    doc.setFontSize(8).setFont('helvetica','bold').setTextColor(WHITE);
+    ['SERVICE DESCRIPTION','TYPE','PRICE (USD)',''].forEach((h,i)=>{doc.text(h,colX[i]+6,y+14);});
+    y+=22;
+    // rows
+    d.services.forEach((s,i)=>{
+      if(i%2===0){doc.setFillColor(OFFWHITE);}else{doc.setFillColor(WHITE);}
+      doc.rect(ML,y,TW,22,'F');
+      doc.setFontSize(10).setFont('helvetica','normal').setTextColor(BLACK);
+      doc.text(s.desc.substring(0,42),colX[0]+6,y+14);
+      doc.setTextColor(MID);doc.text(s.type,colX[1]+6,y+14);
+      doc.setTextColor(BLACK).setFont('helvetica','bold');
+      doc.text('$'+s.price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}),colX[2]+6,y+14);
+      y+=22;
+    });
+    // total
+    doc.setFillColor(RED);doc.rect(ML,y,TW,28,'F');
+    doc.setFontSize(10).setFont('helvetica','bold').setTextColor(WHITE);
+    doc.text('TOTAL CONTRACT VALUE',ML+6,y+17);
+    doc.setFontSize(14);doc.text(d.total,MR-6,y+18,'right');
+    y+=40;
+
+    y=sectionTitle('Payment Terms',y+8);
+    doc.setFillColor(OFFWHITE);doc.roundedRect(ML,y,TW,54,4,4,'F');
+    labelVal('Payment Schedule',d.paySchedule,y+8,ML+10,halfW+40);
+    labelVal('Late Payment Fee',d.lateFee,y+8,ML+TW/2+20,halfW-20);
+    y+=66;
+
+    pageFooter(3);
+
+    // ── PAGE 4: TIMELINE & DELIVERABLES ──
+    doc.addPage();
+    pageHeader('Timeline & Deliverables');
+    y=70;
+
+    y=sectionTitle('Project Timeline',y);
+    doc.setFillColor(OFFWHITE);doc.roundedRect(ML,y,TW,54,4,4,'F');
+    labelVal('Start Date',fmtDate(d.startDate),y+8,ML+10,halfW);
+    labelVal('End / Renewal Date',fmtDate(d.endDate),y+8,ML+TW/2+10,halfW);
+    labelVal('Engagement Type',d.engType,y+32,ML+10,TW-20);
+    y+=66;
+
+    y=sectionTitle('Deliverables',y+4);
+    y=bodyText('Amplify commits to delivering the following items as part of this engagement:',y)+8;
+    d.deliverables.forEach((del,i)=>{
+      if(i%2===0){doc.setFillColor(OFFWHITE);}else{doc.setFillColor(WHITE);}
+      doc.rect(ML,y,TW,20,'F');
+      doc.setFillColor(RED);doc.circle(ML+12,y+10,3,'F');
+      doc.setFontSize(10).setFont('helvetica','normal').setTextColor(BLACK);
+      doc.text(del,ML+22,y+13);
+      y+=20;
+    });
+    y+=12;
+
+    pageFooter(4);
+
+    // ── PAGE 5+: TERMS & CONDITIONS ──
+    doc.addPage();
+    pageHeader('Terms & Conditions');
+    y=70;
+
+    // Addendum preamble header
+    doc.setFontSize(8).setFont('helvetica','bold').setTextColor(RED);
+    doc.text('ADDENDUM TO SERVICES AGREEMENT',ML,y);
+    y+=11;
+    doc.setFontSize(8).setFont('helvetica','normal').setTextColor(MID);
+    doc.text('General Terms & Conditions for Legal Marketing and Consulting Services',ML,y);
+    y+=14;
+    doc.setFillColor(OFFWHITE);doc.roundedRect(ML,y,TW,72,4,4,'F');
+    doc.setDrawColor(RED);doc.setLineWidth(2);doc.line(ML,y+4,ML,y+68);
+    doc.setFontSize(9.5).setFont('helvetica','normal').setTextColor('#333333');
+    const preambleLine1 = 'This Addendum ("Addendum") is entered into as of '+fmtDate(d.contractDate)+' ("Addendum Effective Date") and is';
+    const preambleLine2 = 'incorporated into and made part of the existing Services Agreement ("Agreement") between';
+    const preambleLine3 = 'HS Advertising, LLC d/b/a AMPLIFY ("AMPLIFY") and '+d.clientName+' ("Client").';
+    const preambleLine4 = 'In the event of any conflict between this Addendum and the Agreement, this Addendum shall control.';
+    doc.text(preambleLine1,ML+10,y+14);
+    doc.text(preambleLine2,ML+10,y+26);
+    doc.setFont('helvetica','bold');doc.text(preambleLine3,ML+10,y+38);
+    doc.setFont('helvetica','normal').setTextColor(MID);doc.text(preambleLine4,ML+10,y+52);
+    doc.setTextColor('#333333');
+    y+=84;
+
+    y=sectionTitle('Terms & Conditions',y);
+    y=bodyText('The following terms and conditions govern this Agreement and are binding on both parties upon execution.',y)+10;
+
+    let pageNum=5;
+    d.terms.forEach(tc=>{
+      const titleH=16, bodyLines=doc.splitTextToSize(tc.body,TW-16);
+      const blockH=titleH+bodyLines.length*13+16;
+      if(y+blockH>H-60){
+        pageFooter(pageNum++);
+        doc.addPage();
+        pageHeader('Terms & Conditions (cont.)');
+        y=70;
+      }
+      doc.setFillColor(OFFWHITE);doc.roundedRect(ML,y,TW,blockH,4,4,'F');
+      doc.setDrawColor(RED);doc.setLineWidth(2.5);doc.line(ML,y+4,ML,y+blockH-4);
+      doc.setFontSize(10).setFont('helvetica','bold').setTextColor(RED);
+      doc.text(tc.title,ML+10,y+13);
+      doc.setFontSize(9.5).setFont('helvetica','normal').setTextColor('#333333');
+      doc.text(bodyLines,ML+10,y+26);
+      y+=blockH+8;
+    });
+
+    if(d.addlNotes.trim()){
+      const noteLines=doc.splitTextToSize(d.addlNotes,TW-16);
+      const noteH=16+noteLines.length*13+16;
+      if(y+noteH>H-60){pageFooter(pageNum++);doc.addPage();pageHeader('Additional Terms');y=70;}
+      y=sectionTitle('Additional Notes & Custom Terms',y+4);
+      doc.setFillColor(OFFWHITE);doc.roundedRect(ML,y,TW,noteH,4,4,'F');
+      doc.setFontSize(9.5).setFont('helvetica','normal').setTextColor(BLACK);
+      doc.text(noteLines,ML+10,y+14);
+      y+=noteH+10;
+    }
+    pageFooter(pageNum++);
+
+    // ── FINAL PAGE: SIGNATURES ──
+    doc.addPage();
+    pageHeader('Signatures & Execution');
+    y=70;
+
+    y=sectionTitle('Execution',y);
+    y=bodyText(`By signing below, the duly authorized representatives of each party agree to be legally bound by all terms and conditions of this Service Agreement. This agreement becomes effective as of ${fmtDate(d.contractDate)}.`,y)+18;
+
+    // signature blocks
+    const sigW=(TW-20)/2;
+    function drawSigBlock(x,label,name,title,sigDataUrl,yPos){
+      doc.setFillColor(OFFWHITE);doc.roundedRect(x,yPos,sigW,150,4,4,'F');
+      doc.setFontSize(8).setFont('helvetica','bold').setTextColor(MID);
+      doc.text(label.toUpperCase(),x+10,yPos+16);
+      // sig image
+      doc.setFillColor(WHITE);doc.roundedRect(x+8,yPos+22,sigW-16,70,3,3,'F');
+      try{doc.addImage(sigDataUrl,'PNG',x+8,yPos+22,sigW-16,70);}catch(e){}
+      // printed name line
+      doc.setDrawColor(BLACK);doc.setLineWidth(0.5);doc.line(x+10,yPos+105,x+sigW-10,yPos+105);
+      doc.setFontSize(8).setTextColor(MID);doc.text('PRINTED NAME',x+10,yPos+115);
+      doc.setFontSize(10).setFont('helvetica','normal').setTextColor(BLACK);
+      doc.text(name||'',x+10,yPos+128);
+      doc.setFontSize(9).setTextColor(MID);doc.text(title||'',x+10,yPos+141);
+    }
+    drawSigBlock(ML,   'Amplify for Lawyers',d.sigNameA,d.sigTitleA,d.sigA,y);
+    drawSigBlock(ML+sigW+20,'Client',d.sigNameB,d.sigTitleB,d.sigB,y);
+    y+=162;
+
+    // date + contract ref
+    doc.setFillColor(WHITE);doc.roundedRect(ML,y,TW,36,4,4,'F');
+    doc.setDrawColor(LIGHT);doc.setLineWidth(0.5);doc.roundedRect(ML,y,TW,36,4,4,'S');
+    doc.setFontSize(8).setFont('helvetica','bold').setTextColor(MID);doc.text('DATE OF EXECUTION',ML+10,y+12);
+    doc.setFontSize(11).setFont('helvetica','normal').setTextColor(BLACK);doc.text(fmtDate(d.contractDate),ML+10,y+26);
+    doc.setFontSize(8).setFont('helvetica','bold').setTextColor(MID);doc.text('CONTRACT REFERENCE',ML+TW/2,y+12);
+    doc.setFontSize(11).setFont('helvetica','normal').setTextColor(BLACK);doc.text(d.contractNum,ML+TW/2,y+26);
+    y+=48;
+
+    // esign disclosure
+    doc.setFillColor('#FFF5F5');doc.roundedRect(ML,y,TW,52,4,4,'F');
+    doc.setDrawColor(RED);doc.setLineWidth(0.5);doc.roundedRect(ML,y,TW,52,4,4,'S');
+    doc.setFontSize(8).setFont('helvetica','bold').setTextColor(RED);doc.text('ELECTRONIC SIGNATURE DISCLOSURE',ML+10,y+12);
+    doc.setFontSize(8).setFont('helvetica','normal').setTextColor('#555');
+    const esignText='The electronic signatures on this document are legally binding under the Electronic Signatures in Global and National Commerce Act (ESIGN Act, 15 U.S.C. § 7001 et seq.) and the Uniform Electronic Transactions Act (UETA). Both parties have agreed to conduct this transaction electronically.';
+    const esignLines=doc.splitTextToSize(esignText,TW-20);
+    doc.text(esignLines,ML+10,y+24);
+    y+=64;
+
+    pageFooter(pageNum);
+
+    // ── SAVE ──
+    const filename=`Amplify_Contract_${d.contractNum}_${d.clientName.replace(/[^a-zA-Z0-9]/g,'_').substring(0,30)}.pdf`;
+    const blob=doc.output('blob');
+    const url=URL.createObjectURL(blob);
+    document.getElementById('download-link').href=url;
+    document.getElementById('download-link').download=filename;
+    document.getElementById('banner-filename').textContent=filename;
+    document.getElementById('download-banner').classList.add('show');
+    status.textContent='Contract generated successfully.';
+    status.className='status success';
+    btn.disabled=false;
+
+  }catch(err){
+    status.textContent='Error generating PDF: '+err.message;
+    status.className='status error';
+    btn.disabled=false;
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('contractDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('contractNum').value='AMP-'+new Date().getFullYear()+'-001';
+  initServices();
+  initDeliverables();
+  initTC();
+  setupCanvas('canvasA','hintA');
+  setupCanvas('canvasB','hintB');
+});
+</script>
+</body>
+</html>
